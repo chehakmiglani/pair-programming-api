@@ -3,8 +3,25 @@ from uuid import UUID
 from sqlmodel import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import Room
-from app.db import async_session
+from app.db import async_session, create_db_and_tables
 import datetime
+
+# Track if DB has been initialized
+_db_initialized = False
+
+
+async def ensure_db_tables():
+    """Ensure database tables exist. Safe to call multiple times."""
+    global _db_initialized
+    if not _db_initialized:
+        try:
+            print("📊 Initializing database tables...", flush=True)
+            await create_db_and_tables()
+            _db_initialized = True
+            print("✅ Database tables ready!", flush=True)
+        except Exception as e:
+            print(f"⚠️  Error initializing DB tables: {e}", flush=True)
+            raise
 
 
 async def create_room() -> UUID:

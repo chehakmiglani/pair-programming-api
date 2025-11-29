@@ -80,18 +80,7 @@ else:
 @app.get("/")
 async def root():
     """Root endpoint serving the demo page."""
-    global _db_initialized
-    
-    # Ensure DB is initialized before serving requests
-    if create_db_and_tables and not _db_initialized:
-        try:
-            print("📊 Lazy initializing database tables on first request...", file=sys.stderr)
-            await create_db_and_tables()
-            _db_initialized = True
-            print("✅ Database tables initialized!", file=sys.stderr)
-        except Exception as e:
-            print(f"Error initializing DB: {e}", file=sys.stderr)
-    
+    # The root endpoint should just serve HTML, no DB needed
     try:
         demo_path = os.path.join(os.path.dirname(__file__), "static", "index.html")
         if os.path.exists(demo_path):
