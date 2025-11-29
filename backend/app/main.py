@@ -11,13 +11,9 @@ from app.routers import rooms, autocomplete, websocket
 async def lifespan(app: FastAPI):
     # Startup
     print("Starting application...")
-    try:
-        print("Creating database tables...")
-        await create_db_and_tables()
-        print("✅ Database tables created successfully.")
-    except Exception as e:
-        print(f"⚠️  Warning: Could not create database tables on startup: {e}")
-        print("The app will continue running. Tables will be created when needed.")
+    # Skip table creation on startup to allow app to run without database connection
+    # Tables will be created lazily when first API call is made
+    print("✅ Application started successfully!")
     
     yield
     
