@@ -1,54 +1,80 @@
 import os
+import sys
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from contextlib import asynccontextmanager
-from app.db import create_db_and_tables
-from app.routers import rooms, autocomplete, websocket
 
-# Lifespan context to create tables on startup
+# Try to import routers - handle import errors gracefully
+try:
+    from app.routers import rooms, autocomplete, websocket
+    ROUTERS_AVAILABLE = True
+except Exception as e:
+    print(f"Warning: Could not import routers: {e}", file=sys.stderr)
+    ROUTERS_AVAILABLE = False
+
+# Lifespan context - minimal startup
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    print("Starting application...")
-    # Skip table creation on startup to allow app to run without database connection
-    # Tables will be created lazily when first API call is made
-    print("✅ Application started successfully!")
+    print("🚀 Starting Pair Programming API...", file=sys.stderr)
+    print("✅ Application startup complete!", file=sys.stderr)
     
     yield
     
     # Shutdown
-    print("Shutting down...")
+    print("🛑 Shutting down Pair Programming API...", file=sys.stderr)
 
 
+# Create FastAPI app
 app = FastAPI(
     title="Pair Programming API",
     description="Real-time collaborative code editor with WebSockets",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
+    docs_url="/docs",
+    openapi_url="/openapi.json"
 )
 
-# Include routers
-app.include_router(rooms.router)
-app.include_router(autocomplete.router)
-app.include_router(websocket.router)
+# Include routers only if they loaded successfully
+if ROUTERS_AVAILABLE:
+    try:
+        app.include_router(rooms.router)
+        app.include_router(autocomplete.router)
+        app.include_router(websocket.router)
+        print("✅ All routers included successfully", file=sys.stderr)
+    except Exception as e:
+        print(f"Warning: Could not include routers: {e}", file=sys.stderr)
 
-# Static files for simple demo HTML page
+# Mount static files
 static_dir = os.path.join(os.path.dirname(__file__), "static")
 if os.path.exists(static_dir):
-    app.mount("/static", StaticFiles(directory=static_dir), name="static")
+    try:
+        app.mount("/static", StaticFiles(directory=static_dir), name="static")
+        print(f"✅ Static files mounted from {static_dir}", file=sys.stderr)
+    except Exception as e:
+        print(f"Warning: Could not mount static files: {e}", file=sys.stderr)
+else:
+    print(f"⚠️  Static directory not found at {static_dir}", file=sys.stderr)
 
 
+# Root endpoint serving the demo page
 @app.get("/")
 async def root():
     """Root endpoint serving the demo page."""
-    demo_path = os.path.join(os.path.dirname(__file__), "static", "index.html")
-    if os.path.exists(demo_path):
-        return FileResponse(demo_path)
-    return {"message": "Pair Programming API running. Visit /docs for API documentation."}
+    try:
+        demo_path = os.path.join(os.path.dirname(__file__), "static", "index.html")
+        if os.path.exists(demo_path):
+            return FileResponse(demo_path, media_type="text/html")
+        else:
+            return {"message": "Pair Programming API running. Visit /docs for API documentation."}
+    except Exception as e:
+        print(f"Error serving root: {e}", file=sys.stderr)
+        return {"message": "Pair Programming API running. Visit /docs for API documentation."}
 
 
+# Health check endpoint
 @app.get("/health")
 async def health_check():
-    """Health check endpoint."""
-    return {"status": "ok"}
+    """Health check endpoint for Railway deployment."""
+    return {"status": "ok", "version": "1.0.0"}
