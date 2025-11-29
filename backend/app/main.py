@@ -56,16 +56,8 @@ if ROUTERS_AVAILABLE:
     except Exception as e:
         print(f"Warning: Could not include routers: {e}", file=sys.stderr)
 
-# Mount static files
-static_dir = os.path.join(os.path.dirname(__file__), "static")
-if os.path.exists(static_dir):
-    try:
-        app.mount("/static", StaticFiles(directory=static_dir), name="static")
-        print(f"✅ Static files mounted from {static_dir}", file=sys.stderr)
-    except Exception as e:
-        print(f"Warning: Could not mount static files: {e}", file=sys.stderr)
-else:
-    print(f"⚠️  Static directory not found at {static_dir}", file=sys.stderr)
+# Note: Static files are served via the root "/" endpoint instead of mounting
+# This avoids potential routing conflicts
 
 
 # Root endpoint serving the demo page
