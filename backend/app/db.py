@@ -26,26 +26,19 @@ if not DATABASE_URL:
     
     pg_user = os.getenv("PGUSER", "postgres")
     pg_password = os.getenv("PGPASSWORD", "")
-    pg_host = os.getenv("PGHOST", "")
+    pg_host = os.getenv("PGHOST", "localhost")
     pg_port = os.getenv("PGPORT", "5432")
     pg_database = os.getenv("PGDATABASE", "railway")
     
     print(f"📝 PG Environment: user={pg_user}, host={pg_host}, port={pg_port}, db={pg_database}", file=sys.stderr)
     
-    # Only attempt to construct if we have a host
-    if pg_host:
-        if pg_password:
-            DATABASE_URL = f"postgresql+asyncpg://{pg_user}:{pg_password}@{pg_host}:{pg_port}/{pg_database}"
-            print(f"✅ Constructed DATABASE_URL with password", file=sys.stderr)
-        else:
-            # Try with password - sometimes Railway sets it with a placeholder
-            DATABASE_URL = f"postgresql+asyncpg://{pg_user}@{pg_host}:{pg_port}/{pg_database}"
-            print(f"⚠️  No PGPASSWORD, trying connection without password", file=sys.stderr)
+    # Construct URL with password if available
+    if pg_password:
+        DATABASE_URL = f"postgresql+asyncpg://{pg_user}:{pg_password}@{pg_host}:{pg_port}/{pg_database}"
+        print(f"✅ Constructed DATABASE_URL with password", file=sys.stderr)
     else:
-        # No host available - this means PostgreSQL service isn't linked yet
-        print(f"❌ No PGHOST found - PostgreSQL service may not be linked", file=sys.stderr)
-        print(f"� Please ensure PostgreSQL service is added to this project", file=sys.stderr)
-        DATABASE_URL = "postgresql+asyncpg://postgres@localhost:5432/pairprog"  # Fallback
+        DATABASE_URL = f"postgresql+asyncpg://{pg_user}@{pg_host}:{pg_port}/{pg_database}"
+        print(f"✅ Constructed DATABASE_URL without password", file=sys.stderr)
 
 print(f"🔌 Database connection configured", file=sys.stderr)
 
