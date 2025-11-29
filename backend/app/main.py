@@ -72,10 +72,21 @@ else:
 @app.get("/")
 async def root():
     """Root endpoint serving the demo page."""
-    demo_path = os.path.join(os.path.dirname(__file__), "static", "index.html")
-    if os.path.exists(demo_path):
-        return FileResponse(path=demo_path, media_type="text/html")
-    return HTMLResponse(content="<h1>Pair Programming API</h1>", status_code=200)
+    try:
+        # Try to serve the minimal HTML first (smaller file, faster)
+        demo_path = os.path.join(os.path.dirname(__file__), "static", "index_minimal.html")
+        if os.path.exists(demo_path):
+            return FileResponse(path=demo_path, media_type="text/html")
+        
+        # Fallback to full HTML
+        demo_path = os.path.join(os.path.dirname(__file__), "static", "index.html")
+        if os.path.exists(demo_path):
+            return FileResponse(path=demo_path, media_type="text/html")
+    except Exception as e:
+        print(f"Error serving HTML: {e}", file=sys.stderr)
+    
+    # Ultimate fallback - minimal inline HTML
+    return HTMLResponse(content="<html><body><h1>Pair Programming API</h1><p><a href='/docs'>API Docs</a></p></body></html>", status_code=200)
 
 
 # Health check endpoint

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pair Programming - Real-time Code Editor</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { text-align: center; color: white; margin-bottom: 30px; }
+        .header h1 { font-size: 2.5rem; margin-bottom: 10px; }
+        .header p { font-size: 1.1rem; opacity: 0.9; }
+        .controls { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; gap: 10px; flex-wrap: wrap; }
+        input, button { padding: 10px 15px; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem; }
+        button { background: #667eea; color: white; cursor: pointer; border: none; }
+        button:hover { background: #764ba2; }
+        #roomLink { color: #667eea; text-decoration: none; word-break: break-all; }
+        .editor-container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        .editor-box { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .editor-box h3 { margin-bottom: 10px; color: #333; }
+        textarea { width: 100%; height: 400px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 14px; resize: vertical; }
+        .info { background: #f0f0f0; padding: 10px; border-radius: 4px; margin-top: 10px; font-size: 0.9rem; color: #666; }
+        @media (max-width: 768px) { .editor-container { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Pair Programming</h1>
+            <p>Real-time collaborative code editor</p>
+        </div>
+
+        <div class="controls">
+            <input type="text" id="roomInput" placeholder="Enter room name or leave empty for random" />
+            <button onclick="createRoom()">Create Room</button>
+            <button onclick="joinRoom()">Join Room</button>
+            <input type="text" id="roomId" placeholder="Paste room ID here to join" />
+        </div>
+
+        <div id="roomSection" style="display:none;">
+            <div class="info">
+                <strong>Room ID:</strong> <span id="roomIdDisplay"></span><br>
+                <strong>Share Link:</strong> <a id="roomLink" href="#" target="_blank">Open in new tab</a>
+            </div>
+        </div>
+
+        <div class="editor-container" id="editorContainer" style="display:none;">
+            <div class="editor-box">
+                <h3>Your Code</h3>
+                <textarea id="codeEditor" placeholder="Start typing code here..."></textarea>
+            </div>
+            <div class="editor-box">
+                <h3>Peer's Code (Real-time)</h3>
+                <div id="peerCode" style="padding: 10px; background: #f5f5f5; border-radius: 4px; font-family: 'Courier New', monospace; white-space: pre-wrap; word-wrap: break-word; min-height: 400px; max-height: 400px; overflow-y: auto; border: 1px solid #ddd;"></div>
+            </div>
+        </div>
+
+        <div id="message" style="text-align: center; color: white; margin-top: 20px; font-size: 1.1rem;"></div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        let currentRoomId = null;
+        let ws = null;
+
+        async function createRoom() {
+            const roomName = document.getElementById('roomInput').value;
+            try {
+                const response = await fetch(`${API_BASE}/rooms/`, { method: 'POST' });
+                const data = await response.json();
+                currentRoomId = data.roomId;
+                showRoom(data.roomId);
+                showMessage('Room created! Share the link with your peer.', 'success');
+            } catch (error) {
+                showMessage(`Error creating room: ${error.message}`, 'error');
+            }
+        }
+
+        function joinRoom() {
+            const roomId = document.getElementById('roomId').value;
+            if (roomId) {
+                currentRoomId = roomId;
+                showRoom(roomId);
+                showMessage('Joining room...', 'info');
+            }
+        }
+
+        function showRoom(roomId) {
+            document.getElementById('roomIdDisplay').textContent = roomId;
+            const roomLink = `${window.location.origin}?room=${roomId}`;
+            document.getElementById('roomLink').href = roomLink;
+            document.getElementById('roomLink').textContent = roomLink;
+            document.getElementById('roomSection').style.display = 'block';
+            document.getElementById('editorContainer').style.display = 'grid';
+            connectWebSocket(roomId);
+        }
+
+        function connectWebSocket(roomId) {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            ws = new WebSocket(`${protocol}//${window.location.host}/ws/${roomId}`);
+            ws.onopen = () => showMessage('Connected!', 'success');
+            ws.onmessage = (event) => {
+                const message = JSON.parse(event.data);
+                if (message.type === 'code_update') {
+                    document.getElementById('peerCode').textContent = message.code;
+                } else if (message.type === 'initial_code') {
+                    document.getElementById('peerCode').textContent = message.code;
+                }
+            };
+            ws.onerror = () => showMessage('Connection error', 'error');
+            ws.onclose = () => showMessage('Disconnected', 'info');
+        }
+
+        function showMessage(msg, type) {
+            const msgEl = document.getElementById('message');
+            msgEl.textContent = msg;
+            msgEl.style.color = type === 'error' ? '#ff6b6b' : type === 'success' ? '#51cf66' : 'white';
+        }
+
+        document.getElementById('codeEditor').addEventListener('input', (e) => {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'code_update', code: e.target.value }));
+            }
+        });
+
+        // Check if room ID in URL params
+        const params = new URLSearchParams(window.location.search);
+        const roomParam = params.get('room');
+        if (roomParam) {
+            document.getElementById('roomId').value = roomParam;
+            joinRoom();
+        }
+
+        // Show API docs link
+        showMessage('API Docs available at /docs - Create a room or join an existing one!', 'info');
+    </script>
+</body>
+</html>
