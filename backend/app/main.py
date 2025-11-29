@@ -2,7 +2,7 @@ import os
 import sys
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import HTMLResponse
 from contextlib import asynccontextmanager
 
 # Track if DB tables have been created
@@ -80,13 +80,14 @@ else:
 @app.get("/")
 async def root():
     """Root endpoint serving the demo page."""
-    # The root endpoint should just serve HTML, no DB needed
     try:
         demo_path = os.path.join(os.path.dirname(__file__), "static", "index.html")
         if os.path.exists(demo_path):
-            return FileResponse(demo_path, media_type="text/html")
+            with open(demo_path, 'r', encoding='utf-8') as f:
+                html_content = f.read()
+            return HTMLResponse(content=html_content)
         else:
-            return {"message": "Pair Programming API running. Visit /docs for API documentation."}
+            return {"message": "Pair Programming API. Visit /docs for documentation."}
     except Exception as e:
         print(f"Error serving root: {e}", file=sys.stderr)
         return {"message": "Pair Programming API running. Visit /docs for API documentation."}
