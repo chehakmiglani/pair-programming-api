@@ -7,31 +7,47 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Try to get DATABASE_URL from environment
-# If not set, construct it from individual PostgreSQL variables (Railway provides these)
-DATABASE_URL = os.getenv("DATABASE_URL")
+# Try different ways to get the database URL
+DATABASE_URL = None
 
+# First try: DATABASE_URL (most common)
+DATABASE_URL = os.getenv("DATABASE_URL")
+if DATABASE_URL:
+    print(f"✅ Using DATABASE_URL from environment", file=sys.stderr)
+else:
+    # Second try: DATABASE_PUBLIC_URL (Railway provides both public and private)
+    DATABASE_URL = os.getenv("DATABASE_PUBLIC_URL")
+    if DATABASE_URL:
+        print(f"✅ Using DATABASE_PUBLIC_URL from environment", file=sys.stderr)
+
+# If still no URL, try to construct from individual PG variables
 if not DATABASE_URL:
-    # Railway provides these env vars when PostgreSQL is linked
+    print(f"⚠️  DATABASE_URL not found, checking individual PG variables...", file=sys.stderr)
+    
     pg_user = os.getenv("PGUSER", "postgres")
     pg_password = os.getenv("PGPASSWORD", "")
-    pg_host = os.getenv("PGHOST", "postgres.railway.internal")
+    pg_host = os.getenv("PGHOST", "")
     pg_port = os.getenv("PGPORT", "5432")
     pg_database = os.getenv("PGDATABASE", "railway")
     
     print(f"📝 PG Environment: user={pg_user}, host={pg_host}, port={pg_port}, db={pg_database}", file=sys.stderr)
     
-    if pg_password:
-        DATABASE_URL = f"postgresql+asyncpg://{pg_user}:{pg_password}@{pg_host}:{pg_port}/{pg_database}"
-        print(f"✅ Constructed DATABASE_URL with password", file=sys.stderr)
+    # Only attempt to construct if we have a host
+    if pg_host:
+        if pg_password:
+            DATABASE_URL = f"postgresql+asyncpg://{pg_user}:{pg_password}@{pg_host}:{pg_port}/{pg_database}"
+            print(f"✅ Constructed DATABASE_URL with password", file=sys.stderr)
+        else:
+            # Try with password - sometimes Railway sets it with a placeholder
+            DATABASE_URL = f"postgresql+asyncpg://{pg_user}@{pg_host}:{pg_port}/{pg_database}"
+            print(f"⚠️  No PGPASSWORD, trying connection without password", file=sys.stderr)
     else:
-        # Try without password first
-        DATABASE_URL = f"postgresql+asyncpg://{pg_user}@{pg_host}:{pg_port}/{pg_database}"
-        print(f"⚠️  PGPASSWORD not set, attempting connection without password", file=sys.stderr)
-else:
-    print(f"✅ Using DATABASE_URL from environment", file=sys.stderr)
+        # No host available - this means PostgreSQL service isn't linked yet
+        print(f"❌ No PGHOST found - PostgreSQL service may not be linked", file=sys.stderr)
+        print(f"� Please ensure PostgreSQL service is added to this project", file=sys.stderr)
+        DATABASE_URL = "postgresql+asyncpg://postgres@localhost:5432/pairprog"  # Fallback
 
-print(f"🔌 Database connection string ready (host={pg_host if 'pg_host' in locals() else 'from env'})", file=sys.stderr)
+print(f"🔌 Database connection configured", file=sys.stderr)
 
 # Async engine
 engine: AsyncEngine = create_async_engine(DATABASE_URL, echo=False, future=True)

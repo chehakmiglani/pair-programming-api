@@ -24,17 +24,9 @@ async def lifespan(app: FastAPI):
     # Startup
     print("🚀 Starting Pair Programming API...", file=sys.stderr)
     
-    # Try to initialize DB tables, but don't block startup if it fails
-    global _db_initialized
-    try:
-        if create_db_and_tables and not _db_initialized:
-            print("📊 Initializing database tables...", file=sys.stderr)
-            await create_db_and_tables()
-            _db_initialized = True
-            print("✅ Database tables initialized!", file=sys.stderr)
-    except Exception as e:
-        print(f"⚠️  Could not initialize DB tables: {e}", file=sys.stderr)
-        print("💡 Tables will be created on first API request", file=sys.stderr)
+    # Skip database initialization on startup - it will happen on first use
+    # This allows the app to start even if PostgreSQL isn't available yet
+    print("💡 Database initialization deferred to first use", file=sys.stderr)
     
     print("✅ Application startup complete!", file=sys.stderr)
     
