@@ -1,7 +1,6 @@
 import os
 import sys
 from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, FileResponse
 from contextlib import asynccontextmanager
 
@@ -64,18 +63,27 @@ if ROUTERS_AVAILABLE:
 @app.get("/")
 async def root():
     """Root endpoint serving the demo page."""
+    print("[GET /] Request received", file=sys.stderr, flush=True)
     try:
         # Try to serve the minimal HTML first (smaller file, faster)
         demo_path = os.path.join(os.path.dirname(__file__), "static", "index_minimal.html")
+        print(f"[GET /] Checking for minimal HTML at: {demo_path}", file=sys.stderr, flush=True)
         if os.path.exists(demo_path):
+            print(f"[GET /] Serving minimal HTML", file=sys.stderr, flush=True)
             return FileResponse(path=demo_path, media_type="text/html")
         
         # Fallback to full HTML
         demo_path = os.path.join(os.path.dirname(__file__), "static", "index.html")
+        print(f"[GET /] Checking for full HTML at: {demo_path}", file=sys.stderr, flush=True)
         if os.path.exists(demo_path):
+            print(f"[GET /] Serving full HTML", file=sys.stderr, flush=True)
             return FileResponse(path=demo_path, media_type="text/html")
+        
+        print(f"[GET /] No HTML files found, returning fallback", file=sys.stderr, flush=True)
     except Exception as e:
-        print(f"Error serving HTML: {e}", file=sys.stderr)
+        print(f"[GET /] Error: {e}", file=sys.stderr, flush=True)
+        import traceback
+        traceback.print_exc(file=sys.stderr)
     
     # Ultimate fallback - minimal inline HTML
     return HTMLResponse(content="<html><body><h1>Pair Programming API</h1><p><a href='/docs'>API Docs</a></p></body></html>", status_code=200)
