@@ -34,11 +34,11 @@ if not DATABASE_URL:
     
     # Construct URL with password if available
     if pg_password:
-        DATABASE_URL = f"postgresql+asyncpg://{pg_user}:{pg_password}@{pg_host}:{pg_port}/{pg_database}"
-        print(f"✅ Constructed DATABASE_URL with password", file=sys.stderr)
+        DATABASE_URL = f"postgresql+asyncpg://{pg_user}:{pg_password}@{pg_host}:{pg_port}/{pg_database}?ssl=require"
+        print(f"✅ Constructed DATABASE_URL with password and SSL", file=sys.stderr)
     else:
-        DATABASE_URL = f"postgresql+asyncpg://{pg_user}@{pg_host}:{pg_port}/{pg_database}"
-        print(f"✅ Constructed DATABASE_URL without password", file=sys.stderr)
+        DATABASE_URL = f"postgresql+asyncpg://{pg_user}@{pg_host}:{pg_port}/{pg_database}?ssl=require"
+        print(f"✅ Constructed DATABASE_URL without password, SSL enabled", file=sys.stderr)
 
 print(f"🔌 Database connection configured", file=sys.stderr)
 
