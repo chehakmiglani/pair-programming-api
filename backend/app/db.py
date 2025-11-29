@@ -10,15 +10,16 @@ load_dotenv()
 # Try different ways to get the database URL
 DATABASE_URL = None
 
-# First try: DATABASE_URL (most common)
-DATABASE_URL = os.getenv("DATABASE_URL")
+# Railway provides several URL formats - try them in order
+# First try: DATABASE_PUBLIC_URL (public network - works reliably)
+DATABASE_URL = os.getenv("DATABASE_PUBLIC_URL")
 if DATABASE_URL:
-    print(f"✅ Using DATABASE_URL from environment", file=sys.stderr)
+    print(f"✅ Using DATABASE_PUBLIC_URL from environment", file=sys.stderr)
 else:
-    # Second try: DATABASE_PUBLIC_URL (Railway provides both public and private)
-    DATABASE_URL = os.getenv("DATABASE_PUBLIC_URL")
+    # Second try: DATABASE_URL
+    DATABASE_URL = os.getenv("DATABASE_URL")
     if DATABASE_URL:
-        print(f"✅ Using DATABASE_PUBLIC_URL from environment", file=sys.stderr)
+        print(f"✅ Using DATABASE_URL from environment", file=sys.stderr)
 
 # If still no URL, try to construct from individual PG variables
 if not DATABASE_URL:
