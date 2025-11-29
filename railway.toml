@@ -5,3 +5,4 @@ builder = "dockerfile"
 healthcheckPath = "/health"
 healthcheckTimeout = 20
 healthcheckInterval = 10
+port = 8000
