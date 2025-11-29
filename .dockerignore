@@ -19,3 +19,9 @@ node_modules
 dist
 build
 *.egg-info
+*.md
+*.txt
+.idea
+.vscode
+*.bat
+*.ps1
