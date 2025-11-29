@@ -2,10 +2,12 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-COPY backend/requirements.txt .
+COPY backend/requirements.txt requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY backend/app ./app
-COPY backend/entrypoint.py ./entrypoint.py
+COPY backend/app app
 
-CMD ["python", "/app/entrypoint.py"]
+EXPOSE 8000
+
+ENTRYPOINT ["python", "-m", "uvicorn"]
+CMD ["app.main:app", "--host", "0.0.0.0", "--port", "8000"]
