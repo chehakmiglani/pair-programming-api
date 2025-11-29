@@ -3,7 +3,7 @@ builder = "dockerfile"
 
 [deploy]
 healthcheckPath = "/health"
-healthcheckTimeout = 30
+healthcheckTimeout = 60
 healthcheckInterval = 5
-startupTimeout = 60
+startupTimeout = 120
 port = 8000
