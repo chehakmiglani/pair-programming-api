@@ -9,7 +9,11 @@ COPY backend/app app
 COPY backend/start.sh start.sh
 RUN chmod +x start.sh
 
+# Set environment variables
+ENV PORT=8000
+ENV HOST=0.0.0.0
+
 EXPOSE 8000
 
-# Run start.sh directly - Railway will inject PORT env var
+# Run start.sh directly
 CMD ["bash", "start.sh"]
