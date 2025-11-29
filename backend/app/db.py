@@ -19,13 +19,19 @@ if not DATABASE_URL:
     pg_port = os.getenv("PGPORT", "5432")
     pg_database = os.getenv("PGDATABASE", "railway")
     
+    print(f"📝 PG Environment: user={pg_user}, host={pg_host}, port={pg_port}, db={pg_database}", file=sys.stderr)
+    
     if pg_password:
         DATABASE_URL = f"postgresql+asyncpg://{pg_user}:{pg_password}@{pg_host}:{pg_port}/{pg_database}"
+        print(f"✅ Constructed DATABASE_URL with password", file=sys.stderr)
     else:
-        # Fallback for local development
-        DATABASE_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/pairprog"
-    
-    print(f"📝 Constructed DATABASE_URL from PGHOST={pg_host}", file=sys.stderr)
+        # Try without password first
+        DATABASE_URL = f"postgresql+asyncpg://{pg_user}@{pg_host}:{pg_port}/{pg_database}"
+        print(f"⚠️  PGPASSWORD not set, attempting connection without password", file=sys.stderr)
+else:
+    print(f"✅ Using DATABASE_URL from environment", file=sys.stderr)
+
+print(f"🔌 Database connection string ready (host={pg_host if 'pg_host' in locals() else 'from env'})", file=sys.stderr)
 
 # Async engine
 engine: AsyncEngine = create_async_engine(DATABASE_URL, echo=False, future=True)
