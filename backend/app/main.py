@@ -1,7 +1,7 @@
 import os
 import sys
 from fastapi import FastAPI
-from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.responses import HTMLResponse
 from contextlib import asynccontextmanager
 
 # Track if DB tables have been created
@@ -59,34 +59,36 @@ if ROUTERS_AVAILABLE:
 # This avoids potential routing conflicts
 
 
-# Root endpoint serving the demo page
+# Pre-load HTML content at startup to avoid file I/O issues
+_html_content = None
+
 @app.get("/")
 async def root():
     """Root endpoint serving the demo page."""
+    global _html_content
     print("[GET /] Request received", file=sys.stderr, flush=True)
+    
+    if _html_content:
+        print("[GET /] Returning cached HTML", file=sys.stderr, flush=True)
+        return HTMLResponse(content=_html_content, status_code=200)
+    
     try:
         # Try to serve the minimal HTML first (smaller file, faster)
         demo_path = os.path.join(os.path.dirname(__file__), "static", "index_minimal.html")
-        print(f"[GET /] Checking for minimal HTML at: {demo_path}", file=sys.stderr, flush=True)
+        print(f"[GET /] Looking for: {demo_path}", file=sys.stderr, flush=True)
         if os.path.exists(demo_path):
-            print(f"[GET /] Serving minimal HTML", file=sys.stderr, flush=True)
-            return FileResponse(path=demo_path, media_type="text/html")
-        
-        # Fallback to full HTML
-        demo_path = os.path.join(os.path.dirname(__file__), "static", "index.html")
-        print(f"[GET /] Checking for full HTML at: {demo_path}", file=sys.stderr, flush=True)
-        if os.path.exists(demo_path):
-            print(f"[GET /] Serving full HTML", file=sys.stderr, flush=True)
-            return FileResponse(path=demo_path, media_type="text/html")
-        
-        print(f"[GET /] No HTML files found, returning fallback", file=sys.stderr, flush=True)
+            print(f"[GET /] Found minimal HTML, reading...", file=sys.stderr, flush=True)
+            with open(demo_path, 'r', encoding='utf-8') as f:
+                _html_content = f.read()
+            print(f"[GET /] Read {len(_html_content)} bytes", file=sys.stderr, flush=True)
+            return HTMLResponse(content=_html_content, status_code=200)
     except Exception as e:
         print(f"[GET /] Error: {e}", file=sys.stderr, flush=True)
-        import traceback
-        traceback.print_exc(file=sys.stderr)
     
     # Ultimate fallback - minimal inline HTML
-    return HTMLResponse(content="<html><body><h1>Pair Programming API</h1><p><a href='/docs'>API Docs</a></p></body></html>", status_code=200)
+    fallback = "<html><body><h1>Pair Programming API</h1><p><a href='/docs'>API Docs</a></p></body></html>"
+    print("[GET /] Returning fallback HTML", file=sys.stderr, flush=True)
+    return HTMLResponse(content=fallback, status_code=200)
 
 
 # Health check endpoint
