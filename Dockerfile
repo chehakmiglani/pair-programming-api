@@ -9,11 +9,7 @@ COPY backend/app app
 COPY backend/start.sh start.sh
 RUN chmod +x start.sh
 
-# Set environment variables
-ENV PORT=8000
-ENV HOST=0.0.0.0
-
 EXPOSE 8000
 
-# Run start.sh directly
-CMD ["bash", "start.sh"]
+# Always use port 8000 - Railway will handle external routing
+CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
