@@ -15,11 +15,17 @@ DATABASE_URL = None
 DATABASE_URL = os.getenv("DATABASE_PUBLIC_URL")
 if DATABASE_URL:
     print(f"✅ Using DATABASE_PUBLIC_URL from environment", file=sys.stderr)
+    # Convert postgresql:// to postgresql+asyncpg://
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://")
+    print(f"✅ Converted to asyncpg format", file=sys.stderr)
 else:
     # Second try: DATABASE_URL
     DATABASE_URL = os.getenv("DATABASE_URL")
     if DATABASE_URL:
         print(f"✅ Using DATABASE_URL from environment", file=sys.stderr)
+        if "postgresql+asyncpg" not in DATABASE_URL:
+            DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://")
+            print(f"✅ Converted to asyncpg format", file=sys.stderr)
 
 # If still no URL, try to construct from individual PG variables
 if not DATABASE_URL:
