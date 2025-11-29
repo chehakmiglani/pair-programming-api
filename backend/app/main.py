@@ -69,20 +69,18 @@ else:
 
 
 # Root endpoint serving the demo page
-@app.get("/")
+@app.get("/", response_class=HTMLResponse)
 async def root():
     """Root endpoint serving the demo page."""
     try:
         demo_path = os.path.join(os.path.dirname(__file__), "static", "index.html")
         if os.path.exists(demo_path):
             with open(demo_path, 'r', encoding='utf-8') as f:
-                html_content = f.read()
-            return HTMLResponse(content=html_content)
-        else:
-            return {"message": "Pair Programming API. Visit /docs for documentation."}
+                return f.read()
+        return "<h1>Pair Programming API</h1><p>Visit /docs for documentation</p>"
     except Exception as e:
         print(f"Error serving root: {e}", file=sys.stderr)
-        return {"message": "Pair Programming API running. Visit /docs for API documentation."}
+        return "<h1>Pair Programming API</h1><p>Visit /docs for documentation</p>"
 
 
 # Health check endpoint
