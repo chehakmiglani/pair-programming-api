@@ -96,3 +96,9 @@ async def root():
 async def health_check():
     """Health check endpoint for Railway deployment."""
     return {"status": "ok", "version": "1.0.0"}
+
+
+@app.get("/test")
+async def test():
+    """Test endpoint to verify app is working."""
+    return {"message": "App is working!"}
