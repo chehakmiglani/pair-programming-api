@@ -1,8 +1,14 @@
 #!/bin/bash
 set -e
 
-# Use PORT env var from Railway, or 8000 for local dev
-PORT="${PORT:-8000}"
+echo "Starting Pair Programming API..."
+echo "PORT environment variable: '$PORT'"
+echo "HOST environment variable: '$HOST'"
 
-echo "Starting Pair Programming API on port $PORT..."
-python -m uvicorn app.main:app --host 0.0.0.0 --port "$PORT"
+# Railway sets PORT - use it, default to 8000
+PORT="${PORT:-8000}"
+HOST="${HOST:-0.0.0.0}"
+
+echo "Will start on $HOST:$PORT"
+
+exec python -m uvicorn app.main:app --host "$HOST" --port "$PORT"

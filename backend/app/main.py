@@ -5,19 +5,37 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from contextlib import asynccontextmanager
 
+# Track if DB tables have been created
+_db_initialized = False
+
 # Try to import routers - handle import errors gracefully
 try:
     from app.routers import rooms, autocomplete, websocket
+    from app.db import create_db_and_tables
     ROUTERS_AVAILABLE = True
 except Exception as e:
     print(f"Warning: Could not import routers: {e}", file=sys.stderr)
     ROUTERS_AVAILABLE = False
+    create_db_and_tables = None
 
 # Lifespan context - minimal startup
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
     print("🚀 Starting Pair Programming API...", file=sys.stderr)
+    
+    # Try to initialize DB tables, but don't block startup if it fails
+    global _db_initialized
+    try:
+        if create_db_and_tables and not _db_initialized:
+            print("📊 Initializing database tables...", file=sys.stderr)
+            await create_db_and_tables()
+            _db_initialized = True
+            print("✅ Database tables initialized!", file=sys.stderr)
+    except Exception as e:
+        print(f"⚠️  Could not initialize DB tables: {e}", file=sys.stderr)
+        print("💡 Tables will be created on first API request", file=sys.stderr)
+    
     print("✅ Application startup complete!", file=sys.stderr)
     
     yield
@@ -62,6 +80,18 @@ else:
 @app.get("/")
 async def root():
     """Root endpoint serving the demo page."""
+    global _db_initialized
+    
+    # Ensure DB is initialized before serving requests
+    if create_db_and_tables and not _db_initialized:
+        try:
+            print("📊 Lazy initializing database tables on first request...", file=sys.stderr)
+            await create_db_and_tables()
+            _db_initialized = True
+            print("✅ Database tables initialized!", file=sys.stderr)
+        except Exception as e:
+            print(f"Error initializing DB: {e}", file=sys.stderr)
+    
     try:
         demo_path = os.path.join(os.path.dirname(__file__), "static", "index.html")
         if os.path.exists(demo_path):
