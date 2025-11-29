@@ -2,7 +2,7 @@ import os
 import sys
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, FileResponse
 from contextlib import asynccontextmanager
 
 # Track if DB tables have been created
@@ -69,29 +69,13 @@ else:
 
 
 # Root endpoint serving the demo page
-@app.get("/", response_class=HTMLResponse)
+@app.get("/")
 async def root():
     """Root endpoint serving the demo page."""
-    try:
-        demo_path = os.path.join(os.path.dirname(__file__), "static", "index.html")
-        if os.path.exists(demo_path):
-            with open(demo_path, 'r', encoding='utf-8') as f:
-                return f.read()
-    except Exception as e:
-        print(f"Error reading HTML: {e}", file=sys.stderr)
-    
-    # Minimal fallback response
-    return """<!DOCTYPE html>
-<html>
-<head>
-    <title>Pair Programming API</title>
-</head>
-<body>
-    <h1>Pair Programming API</h1>
-    <p>Loading...</p>
-    <script>window.location.href = '/docs';</script>
-</body>
-</html>"""
+    demo_path = os.path.join(os.path.dirname(__file__), "static", "index.html")
+    if os.path.exists(demo_path):
+        return FileResponse(path=demo_path, media_type="text/html")
+    return HTMLResponse(content="<h1>Pair Programming API</h1>", status_code=200)
 
 
 # Health check endpoint
