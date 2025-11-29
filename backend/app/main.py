@@ -10,10 +10,17 @@ from app.routers import rooms, autocomplete, websocket
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    print("Creating database tables...")
-    await create_db_and_tables()
-    print("Database tables created.")
+    print("Starting application...")
+    try:
+        print("Creating database tables...")
+        await create_db_and_tables()
+        print("✅ Database tables created successfully.")
+    except Exception as e:
+        print(f"⚠️  Warning: Could not create database tables on startup: {e}")
+        print("The app will continue running. Tables will be created when needed.")
+    
     yield
+    
     # Shutdown
     print("Shutting down...")
 
