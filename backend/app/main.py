@@ -77,10 +77,21 @@ async def root():
         if os.path.exists(demo_path):
             with open(demo_path, 'r', encoding='utf-8') as f:
                 return f.read()
-        return "<h1>Pair Programming API</h1><p>Visit /docs for documentation</p>"
     except Exception as e:
-        print(f"Error serving root: {e}", file=sys.stderr)
-        return "<h1>Pair Programming API</h1><p>Visit /docs for documentation</p>"
+        print(f"Error reading HTML: {e}", file=sys.stderr)
+    
+    # Minimal fallback response
+    return """<!DOCTYPE html>
+<html>
+<head>
+    <title>Pair Programming API</title>
+</head>
+<body>
+    <h1>Pair Programming API</h1>
+    <p>Loading...</p>
+    <script>window.location.href = '/docs';</script>
+</body>
+</html>"""
 
 
 # Health check endpoint
