@@ -33,14 +33,16 @@ if not DATABASE_URL:
     print(f"📝 PG Environment: user={pg_user}, host={pg_host}, port={pg_port}, db={pg_database}", file=sys.stderr)
     
     # Construct URL with password if available
+    # Note: Try with SSL disabled first - Railway private network may not need it
     if pg_password:
-        DATABASE_URL = f"postgresql+asyncpg://{pg_user}:{pg_password}@{pg_host}:{pg_port}/{pg_database}?ssl=require"
-        print(f"✅ Constructed DATABASE_URL with password and SSL", file=sys.stderr)
+        DATABASE_URL = f"postgresql+asyncpg://{pg_user}:{pg_password}@{pg_host}:{pg_port}/{pg_database}"
+        print(f"✅ Constructed DATABASE_URL with password", file=sys.stderr)
     else:
-        DATABASE_URL = f"postgresql+asyncpg://{pg_user}@{pg_host}:{pg_port}/{pg_database}?ssl=require"
-        print(f"✅ Constructed DATABASE_URL without password, SSL enabled", file=sys.stderr)
+        DATABASE_URL = f"postgresql+asyncpg://{pg_user}@{pg_host}:{pg_port}/{pg_database}"
+        print(f"✅ Constructed DATABASE_URL without password", file=sys.stderr)
 
 print(f"🔌 Database connection configured", file=sys.stderr)
+print(f"📍 DATABASE_URL: {DATABASE_URL[:50]}..." if len(DATABASE_URL) > 50 else f"📍 DATABASE_URL: {DATABASE_URL}", file=sys.stderr)
 
 # Async engine
 engine: AsyncEngine = create_async_engine(DATABASE_URL, echo=False, future=True)
